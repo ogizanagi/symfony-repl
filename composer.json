@@ -12,7 +12,8 @@
         }
     ],
     "require": {
-        "psy/psysh": "~0.4"
+        "psy/psysh": "~0.4",
+        "symfony/console": "~2.7"
     },
     "bin": ["bin/symfony-repl"]
 }

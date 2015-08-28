@@ -1,16 +1,46 @@
 #!/usr/bin/env php
 <?php
 
-$root = getcwd();
-
-require_once $root.'/app/bootstrap.php.cache';
-require_once $root.'/app/AppKernel.php';
-
 use Psy\Shell;
+use Symfony\Component\Console\Application;
+use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Input\ArgvInput;
+use Symfony\Component\Console\Input\ArrayInput;
+use Symfony\Component\Console\Input\InputOption;
 
-$kernel = new AppKernel('dev', true);
+$input = new ArgvInput();
+$appDir = $input->getParameterOption('--app-dir', 'app');
+$env = $input->getParameterOption(array('--env', '-e'), 'dev');
+$debug = !$input->hasParameterOption('--no-debug');
+$help = $input->hasParameterOption(array('--help', '-h', 'help'));
+
+if ($help) {
+    showHelp();
+}
+
+require_once $appDir.'/bootstrap.php.cache';
+require_once $appDir.'/AppKernel.php';
+
+$kernel = new AppKernel($env, $debug);
 $kernel->loadClassCache();
 $kernel->boot();
-$kernel->getContainer()->get('cache_clearer')->clear($kernel->getCacheDir());
 
 extract(Shell::debug(array('kernel' => $kernel)));
+
+function showHelp()
+{
+    $app = new Application();
+    $repl = new Command('symfony-repl');
+    $repl
+        ->setDescription('Symfony Read-Eval-Print-Loop.')
+        ->addOption('app-dir', null, InputOption::VALUE_REQUIRED, 'The app directory of the symfony application.', 'app')
+        ->addOption('env', 'e', InputOption::VALUE_REQUIRED, 'The environment name.', 'dev')
+        ->addOption('no-debug', null, InputOption::VALUE_NONE, 'Switches off debug mode.')
+    ;
+
+    $app->add($repl);
+    $app->run(new ArrayInput([
+        'command' => 'help',
+        'command_name' => 'symfony-repl',
+    ]));
+}
